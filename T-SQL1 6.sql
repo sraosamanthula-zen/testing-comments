@@ -4,13 +4,13 @@ IF OBJECT_ID('dbo.Employees', 'U') IS NOT NULL
 
 -- Create Table (DDL)
 CREATE TABLE Employees (
-    EmployeeID INT IDENTITY(1,1) PRIMARY KEY,
-    FirstName NVARCHAR(50) NOT NULL,
-    LastName NVARCHAR(50) NOT NULL,
-    Email NVARCHAR(100) UNIQUE,
-    DOB DATE NOT NULL,
-    HireDate DATETIME DEFAULT GETDATE(),
-    Salary DECIMAL(10,2) CHECK (Salary > 0)
+    EmployeeID INT IDENTITY(1,1) PRIMARY KEY, -- Auto-incrementing primary key
+    FirstName NVARCHAR(50) NOT NULL,          -- Employee's first name
+    LastName NVARCHAR(50) NOT NULL,           -- Employee's last name
+    Email NVARCHAR(100) UNIQUE,               -- Unique email address
+    DOB DATE NOT NULL,                        -- Date of birth
+    HireDate DATETIME DEFAULT GETDATE(),      -- Hire date with default as current date
+    Salary DECIMAL(10,2) CHECK (Salary > 0)   -- Salary with a check constraint to ensure it's positive
 );
 
 -- Insert Sample Data (DML)
@@ -24,6 +24,7 @@ CREATE FUNCTION dbo.CalculateAge(@DOB DATE)
 RETURNS INT
 AS
 BEGIN
+    -- Calculate age based on DOB and current date, adjusting for whether the birthday has occurred this year
     RETURN DATEDIFF(YEAR, @DOB, GETDATE()) 
            - CASE WHEN DATEADD(YEAR, DATEDIFF(YEAR, @DOB, GETDATE()), @DOB) > GETDATE() THEN 1 ELSE 0 END;
 END;
@@ -33,6 +34,7 @@ CREATE FUNCTION dbo.GetFullName(@FirstName NVARCHAR(50), @LastName NVARCHAR(50))
 RETURNS NVARCHAR(101)
 AS
 BEGIN
+    -- Concatenate and trim first and last names to return the full name
     RETURN TRIM(@FirstName) + ' ' + TRIM(@LastName);
 END;
 
@@ -41,6 +43,7 @@ CREATE PROCEDURE GetEmployeeByID
     @EmpID INT
 AS
 BEGIN
+    -- Retrieve employee details by ID, including calculated full name and age
     SELECT EmployeeID, dbo.GetFullName(FirstName, LastName) AS FullName, Email, 
            dbo.CalculateAge(DOB) AS Age, HireDate, Salary
     FROM Employees
@@ -81,39 +84,42 @@ END;
 -- Control Flow: Print Employee List
 DECLARE @Counter INT = 1, @Max INT;
 
+-- Get the total number of employees
 SELECT @Max = COUNT(*) FROM Employees;
 
+-- Loop through each employee and print a message
 WHILE @Counter <= @Max
 BEGIN
     PRINT 'Processing Employee ' + CAST(@Counter AS NVARCHAR);
     SET @Counter = @Counter + 1;
 END;
 
---  CTE (Common Table Expression): Employees with Salary > 60000
+-- CTE (Common Table Expression): Employees with Salary > 60000
 WITH HighEarners AS (
     SELECT EmployeeID, FirstName, LastName, Salary 
     FROM Employees WHERE Salary > 60000
 )
+-- Select all high earners
 SELECT * FROM HighEarners;
 
---  Trigger: Log Employee Salary Changes
+-- Trigger: Log Employee Salary Changes
 CREATE TRIGGER trg_SalaryUpdate
 ON Employees
 AFTER UPDATE
 AS
 BEGIN
+    -- Check if the salary column was updated
     IF UPDATE(Salary)
     BEGIN
         PRINT 'Employee salary updated!';
     END;
 END;
 
---  Execute Stored Procedure: Get Employee by ID
+-- Execute Stored Procedure: Get Employee by ID
 EXEC GetEmployeeByID @EmpID = 1;
 
---  Execute Function: Get Employee Full Name
+-- Execute Function: Get Employee Full Name
 SELECT dbo.GetFullName('John', 'Doe') AS FullName;
 
---  Execute Salary Update with Error Handling
+-- Execute Salary Update with Error Handling
 EXEC UpdateEmployeeSalary @EmpID = 1, @NewSalary = 70000;
-
