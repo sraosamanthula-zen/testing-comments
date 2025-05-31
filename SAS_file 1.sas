@@ -1,19 +1,28 @@
-options compress=yes;
-libname hero_lib '/sasdata/Hero_Data';
-libname comp_lib '/sasdata/Anshu_Data';
+/* 
+   This SAS script is designed to process and transform order data from various sources into a structured format for reporting purposes.
+   It fulfills the business requirement of generating detailed order reports, including fiscal information, order status, and product details.
+   The script connects to multiple data sources, formats data, and creates tables for further analysis.
+*/
 
+options compress=yes; /* Enable compression for output datasets to save space */
+libname hero_lib '/sasdata/Hero_Data'; /* Define library for Hero Data */
+libname comp_lib '/sasdata/Anshu_Data'; /* Define library for Anshu Data */
+
+/* Define connection to Oracle database with GPCPRD schema */
 LIBNAME GPCLIB ORACLE PATH=GPCPRD SCHEMA=GPCPRD AUTHDOMAIN="GPCPRD" ;
 
+/* Define connection to SAP ECC system */
 LIBNAME sapecc SASIOSR3 ashost="10.3.3.4" sysnr=00 language=EN Client=300  
 trace=0 BatchMode=0 BUFFER_SIZE=20000000NETWEAVER AUTHDOMAIN="HeroIT SAP ECC" ;
 
+/* Define connection to Oracle database with OLAPPROD schema */
 LIBNAME herotrgt ORACLE PATH=OLAPPROD SCHEMA=SAS_OLAP USER=SAS_OLAP  
 PASSWORD="{SAS002}8041A75C0F4262A15ADF53C2495BA193" ;
 
 LIBNAME heroprod ORACLE PATH=OLAPPROD SCHEMA=OLAP USER=SAS_OLAP  
 PASSWORD="{SAS002}8041A75C0F4262A15ADF53C2495BA193" ;
 
-
+/* Define formats for month, half-year, and quarter values */
 proc format;
 value V_MONTH
 1='Jan'
@@ -44,63 +53,61 @@ value V_QRTR
 4='Q4';
 run;
 
-
+/* Create a table with detailed order information */
 PROC SQL;
 
 CREATE TABLE LND_PD_ORDER_DETAIL AS
 
 SELECT DATEPART(ORDER_DT) AS ORDER_DATE FORMAT = DATE9.,
-/* DATEPART(DD.CALENDAR_DATE) AS FULL_DATE FORMAT = DATE9.,*/
+/* Fiscal year calculated by concatenating calendar year and next year */
   CAT('FY ',CATX('-',PUT(DD.CAL_YEAR,BEST4.),SUBSTR(PUT((DD.CAL_YEAR+1),BEST4.),3,2))) AS FSCL_YEAR,
-       PUT(DD.FSCL_HALF,V_HY.) AS FSCL_HALF,
-       PUT(DD.FSCL_QTR,V_QRTR.) AS FSCL_QTR,
-       PUT(DD.CAL_MONTH,V_MONTH.) AS FSCL_MONTH,
-  CAT(PUT(DD.CAL_MONTH,V_MONTH.),SUBSTR(PUT(DD.CAL_YEAR,BEST4.),3)) AS MONTH_YR,
-       ORDER_NUM AS ORDER_NBR,
-       SUBSTR (ORDER_NUM,FIND (ORDER_NUM, '-') + 1,2) AS DIVISION_ID,
+       PUT(DD.FSCL_HALF,V_HY.) AS FSCL_HALF, /* Fiscal half-year based on predefined format */
+       PUT(DD.FSCL_QTR,V_QRTR.) AS FSCL_QTR, /* Fiscal quarter based on predefined format */
+       PUT(DD.CAL_MONTH,V_MONTH.) AS FSCL_MONTH, /* Fiscal month based on predefined format */
+  CAT(PUT(DD.CAL_MONTH,V_MONTH.),SUBSTR(PUT(DD.CAL_YEAR,BEST4.),3)) AS MONTH_YR, /* Month and year concatenation */
+       ORDER_NUM AS ORDER_NBR, /* Order number */
+       SUBSTR (ORDER_NUM,FIND (ORDER_NUM, '-') + 1,2) AS DIVISION_ID, /* Extract division ID from order number */
        SUBSTR (DIVISION_NAME, FIND (DIVISION_NAME, '-') + 2)
-          AS DIVISION_NAME,    
-       SUBSTR (ORDER_NUM,1,FIND (ORDER_NUM, '-') - 1) AS PD_CODE,
+          AS DIVISION_NAME, /* Extract division name from division name field */
+       SUBSTR (ORDER_NUM,1,FIND (ORDER_NUM, '-') - 1) AS PD_CODE, /* Extract PD code from order number */
        SUBSTR(ORGANIZATION_NAME, FIND (ORGANIZATION_NAME, '-') + 2)
- AS PD_NAME,
-  OU_NUM AS ACCOUNT_NBR,        
-  ACNT.SAP_CODE AS ACCOUNT_CODE,
-  ACNT.NAME AS ACCOUNT_NAME,
-       ACNT.CITY AS ACCOUNT_CITY,
-       SUBSTR (ZONAL_OFFICE_NAME, 16) AS ZONAL_OFFICE,
-       SUBSTR (AREA_OFFICE_NAME, 15) AS AREA_OFFICE,
-       ODIF.ORDER_TYPE AS ORDER_TYPE,
-       ODIF.STATUS_CD AS STATUS,
-       ODIF.X_DLP AS RATE,
-  DATEPART(ODIF.STATUS_DT) AS STATUS_DATE FORMAT = DATE9.,
-       CANCELLED_FLG AS CNCLD_FLAG,
-       CLOSED_FLG AS CLSD_FLAG,      
-  INT(X_TOT_REQ_QTY) AS ORDER_QTY,
+ AS PD_NAME, /* Extract PD name from organization name */
+  OU_NUM AS ACCOUNT_NBR, /* Account number */
+  ACNT.SAP_CODE AS ACCOUNT_CODE, /* SAP account code */
+  ACNT.NAME AS ACCOUNT_NAME, /* Account name */
+       ACNT.CITY AS ACCOUNT_CITY, /* Account city */
+       SUBSTR (ZONAL_OFFICE_NAME, 16) AS ZONAL_OFFICE, /* Extract zonal office name */
+       SUBSTR (AREA_OFFICE_NAME, 15) AS AREA_OFFICE, /* Extract area office name */
+       ODIF.ORDER_TYPE AS ORDER_TYPE, /* Order type */
+       ODIF.STATUS_CD AS STATUS, /* Order status code */
+       ODIF.X_DLP AS RATE, /* Order rate */
+  DATEPART(ODIF.STATUS_DT) AS STATUS_DATE FORMAT = DATE9., /* Status date */
+       CANCELLED_FLG AS CNCLD_FLAG, /* Cancelled flag */
+       CLOSED_FLG AS CLSD_FLAG, /* Closed flag */
+  INT(X_TOT_REQ_QTY) AS ORDER_QTY, /* Total requested quantity */
   (case when INT(QTY_REQ) < INT(X_TOT_REQ_QTY)
-   then (today()-DATEPART(ORDER_DT)) else 0 end) as ORDER_AGE,
-       SPG.PG AS PART_GRP,
-       SPG.SPG AS SUB_PART_GRP,
-       PRD.PART_NUM AS PART_NBR,
-       PRD.PROD_NAME AS PART_DESC,
-       SPG.ABC AS PART_CAT,
-       SPG.CURRENT_NC AS CURRENT_CAT,
-       SPG.ACTIVE_INACTIVE AS PART_STATUS,
-       INT(ODIF.LN_NUM) AS LINE_ITEM_NBR,
-       (INT(X_TOT_REQ_QTY) * ODIF.X_DLP) AS SALE_ORDER_AMT,
-       X_CHILD_ORDER_NUM AS CHILD_ORDER_NBR,
-  X_PAR_ORDER_NUM AS PAR_ORDER_NBR,
-  ORD.X_CUST_CATGRY AS CUST_CAT,
-  ORD.X_CUST_TYPE AS CUST_TYPE,
-  PRD.X_CATEGORY_CD AS PROD_CAT,
-  INT(ODIF.DISCNT_PERCENT*100)/100 AS DSCNT_PRCNTG,
-  INT(ODIF.DISCNT_AMT*100)/100 AS DSCNT_AMT,
-  ORD.B2B_SUB_ORDER_TYPE AS SUB_ORDER_TYPE,
-  /* INT(INV.GROSS_AMT) AS INVOICE_VALUE,
-INT(INV.QTY) AS INVC_QTY*/
+   then (today()-DATEPART(ORDER_DT)) else 0 end) as ORDER_AGE, /* Calculate order age if quantity requested is less than total requested */
+       SPG.PG AS PART_GRP, /* Part group */
+       SPG.SPG AS SUB_PART_GRP, /* Sub part group */
+       PRD.PART_NUM AS PART_NBR, /* Part number */
+       PRD.PROD_NAME AS PART_DESC, /* Part description */
+       SPG.ABC AS PART_CAT, /* Part category */
+       SPG.CURRENT_NC AS CURRENT_CAT, /* Current non-current category */
+       SPG.ACTIVE_INACTIVE AS PART_STATUS, /* Part status */
+       INT(ODIF.LN_NUM) AS LINE_ITEM_NBR, /* Line item number */
+       (INT(X_TOT_REQ_QTY) * ODIF.X_DLP) AS SALE_ORDER_AMT, /* Calculate sale order amount */
+       X_CHILD_ORDER_NUM AS CHILD_ORDER_NBR, /* Child order number */
+  X_PAR_ORDER_NUM AS PAR_ORDER_NBR, /* Parent order number */
+  ORD.X_CUST_CATGRY AS CUST_CAT, /* Customer category */
+  ORD.X_CUST_TYPE AS CUST_TYPE, /* Customer type */
+  PRD.X_CATEGORY_CD AS PROD_CAT, /* Product category */
+  INT(ODIF.DISCNT_PERCENT*100)/100 AS DSCNT_PRCNTG, /* Discount percentage */
+  INT(ODIF.DISCNT_AMT*100)/100 AS DSCNT_AMT, /* Discount amount */
+  ORD.B2B_SUB_ORDER_TYPE AS SUB_ORDER_TYPE, /* Sub order type */
+  /* Invoice quantity calculation with null check */
  INT(CASE WHEN INV.QTY IS NULL THEN 0 ELSE INV.QTY END) AS INVC_QTY,
  (INT(CASE WHEN INV.QTY IS NULL THEN 0 ELSE INV.QTY END) * ODIF.X_DLP) AS INVOICE_VALUE
-/* INT(CASE WHEN INV.GROSS_AMT IS NULL THEN 0 ELSE INV.GROSS_AMT END) AS INVOICE_VALUE*/
-
+/* Invoice value calculation with null check */
 
   FROM HEROPROD.W_ORDER_D ORD
        LEFT JOIN HEROPROD.W_ORDERITEM_F ODIF
@@ -120,39 +127,38 @@ INT(INV.QTY) AS INVC_QTY*/
   LEFT JOIN HEROPROD.WC_INVOICE_ITEM_F INV
           ON ODIF.ORDER_WID = INV.ORDER_WID and ODIF.PROD_WID = INV.PROD_WID
 
- WHERE (ORD.ORDER_TYPE = 'Parts Sale Order')
-            AND ORD.ORDER_DT >= '1NOV2019'd
-            AND ORG_STATUS = 'Active'
-AND ORDER_NUM LIKE '3%'
-            AND CANCELLED_FLG = 'N';
+ WHERE (ORD.ORDER_TYPE = 'Parts Sale Order') /* Filter for parts sale orders */
+            AND ORD.ORDER_DT >= '1NOV2019'd /* Filter for orders after November 1, 2019 */
+            AND ORG_STATUS = 'Active' /* Filter for active organizations */
+AND ORDER_NUM LIKE '3%' /* Filter for order numbers starting with '3' */
+            AND CANCELLED_FLG = 'N'; /* Filter for non-cancelled orders */
 
 QUIT;
 
+/* Create a table for child orders */
 PROC SQL;
 
 CREATE TABLE CHILD_ORDERS AS
 SELECT DISTINCT CHILD_ORDER_NBR
 FROM LND_PD_ORDER_DETAIL
-WHERE CHILD_ORDER_NBR IS NOT NULL;
+WHERE CHILD_ORDER_NBR IS NOT NULL; /* Filter for non-null child order numbers */
 
 QUIT;
 
-
-
+/* Update the LND_PD_ORDER_DETAIL table with flags for child and parent orders */
 PROC SQL;
 
 CREATE TABLE LND_PD_ORDER_DETAIL AS
 SELECT A.*,
-/*CASE WHEN STATUS IN ('Shiped','Shipped') AND STATUS_DATE - ORDER_DATE <= 2 THEN 1 ELSE 0 END AS FFR,
-CASE WHEN INVC_QTY >= ORDER_QTY THEN 1 ELSE 0 END AS ORDER_CMPLTN_FLAG*/
+/* Flags for child and parent orders based on presence of order numbers */
 CASE WHEN PAR_ORDER_NBR IS NOT NULL THEN 1 ELSE 0 END AS CHILD_ORDER_FLAG,
 CASE WHEN CHILD_ORDER_NBR IS NOT NULL THEN 1 ELSE 0 END AS PAR_ORDER_FLAG
 FROM LND_PD_ORDER_DETAIL A;
-/*WHERE CHILD_ORDER_NBR NOT IN (SELECT CHILD_ORDER_NBR FROM CHILD_ORDERS);*/
+/*WHERE CHILD_ORDER_NBR NOT IN (SELECT CHILD_ORDER_NBR FROM CHILD_ORDERS);*/ /* TODO: Uncomment if filtering child orders is needed */
 
 QUIT;
 
-
+/* Create a report dataset with detailed order information */
 DATA comp_lib.RPT_GPC_PD_ORDER_SALE1 (DROP = CHILD_ORDER_NBR);
 ATTRIB ORDER_DATE LABEL = 'Order Date';
 ATTRIB FSCL_YEAR LABEL = 'Fiscal Year';
@@ -195,5 +201,5 @@ ATTRIB FFR LABEL = 'FFR FLAG';
 ATTRIB SUB_ORDER_TYPE LABEL = 'Sub Order Type';
 ATTRIB ORDER_CMPLTN_FLAG LABEL = 'Order Completion Flag';
 ATTRIB CHILD_ORDER_FLAG LABEL = 'Child Order Flag';
-SET LND_PD_ORDER_DETAIL;
+SET LND_PD_ORDER_DETAIL; /* Set the source dataset */
 RUN;
