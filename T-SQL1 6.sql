@@ -1,16 +1,19 @@
+-- This T-SQL script manages an employee database, fulfilling business requirements such as employee data storage, retrieval, and salary management.
+-- It includes table creation, data insertion, utility functions, stored procedures, transactions, error handling, and a trigger for logging salary changes.
+
 -- Drop existing table if it exists
 IF OBJECT_ID('dbo.Employees', 'U') IS NOT NULL
     DROP TABLE dbo.Employees;
 
 -- Create Table (DDL)
 CREATE TABLE Employees (
-    EmployeeID INT IDENTITY(1,1) PRIMARY KEY,
-    FirstName NVARCHAR(50) NOT NULL,
-    LastName NVARCHAR(50) NOT NULL,
-    Email NVARCHAR(100) UNIQUE,
-    DOB DATE NOT NULL,
-    HireDate DATETIME DEFAULT GETDATE(),
-    Salary DECIMAL(10,2) CHECK (Salary > 0)
+    EmployeeID INT IDENTITY(1,1) PRIMARY KEY, -- Auto-incrementing primary key for employee identification
+    FirstName NVARCHAR(50) NOT NULL,          -- Employee's first name, cannot be null
+    LastName NVARCHAR(50) NOT NULL,           -- Employee's last name, cannot be null
+    Email NVARCHAR(100) UNIQUE,               -- Employee's email, must be unique
+    DOB DATE NOT NULL,                        -- Employee's date of birth, cannot be null
+    HireDate DATETIME DEFAULT GETDATE(),      -- Employee's hire date, defaults to current date
+    Salary DECIMAL(10,2) CHECK (Salary > 0)   -- Employee's salary, must be greater than 0
 );
 
 -- Insert Sample Data (DML)
@@ -24,6 +27,8 @@ CREATE FUNCTION dbo.CalculateAge(@DOB DATE)
 RETURNS INT
 AS
 BEGIN
+    -- Calculate the age by subtracting the birth year from the current year
+    -- Adjust if the birthday has not occurred this year
     RETURN DATEDIFF(YEAR, @DOB, GETDATE()) 
            - CASE WHEN DATEADD(YEAR, DATEDIFF(YEAR, @DOB, GETDATE()), @DOB) > GETDATE() THEN 1 ELSE 0 END;
 END;
@@ -33,6 +38,7 @@ CREATE FUNCTION dbo.GetFullName(@FirstName NVARCHAR(50), @LastName NVARCHAR(50))
 RETURNS NVARCHAR(101)
 AS
 BEGIN
+    -- Concatenate first and last names with a space, trimming any extra spaces
     RETURN TRIM(@FirstName) + ' ' + TRIM(@LastName);
 END;
 
@@ -41,6 +47,7 @@ CREATE PROCEDURE GetEmployeeByID
     @EmpID INT
 AS
 BEGIN
+    -- Select employee details by ID, including full name and calculated age
     SELECT EmployeeID, dbo.GetFullName(FirstName, LastName) AS FullName, Email, 
            dbo.CalculateAge(DOB) AS Age, HireDate, Salary
     FROM Employees
@@ -59,8 +66,8 @@ BEGIN
         -- Check if employee exists
         IF NOT EXISTS (SELECT 1 FROM Employees WHERE EmployeeID = @EmpID)
         BEGIN
-            RAISERROR('Employee does not exist.', 16, 1);
-            ROLLBACK;
+            RAISERROR('Employee does not exist.', 16, 1); -- Raise error if employee not found
+            ROLLBACK; -- Rollback transaction
             RETURN;
         END
         
@@ -69,11 +76,11 @@ BEGIN
         SET Salary = @NewSalary
         WHERE EmployeeID = @EmpID;
 
-        COMMIT;
+        COMMIT; -- Commit transaction if successful
         PRINT 'Salary updated successfully.';
     END TRY
     BEGIN CATCH
-        ROLLBACK;
+        ROLLBACK; -- Rollback transaction in case of error
         PRINT 'Error: Salary update failed.';
     END CATCH;
 END;
@@ -81,22 +88,22 @@ END;
 -- Control Flow: Print Employee List
 DECLARE @Counter INT = 1, @Max INT;
 
-SELECT @Max = COUNT(*) FROM Employees;
+SELECT @Max = COUNT(*) FROM Employees; -- Get total number of employees
 
 WHILE @Counter <= @Max
 BEGIN
-    PRINT 'Processing Employee ' + CAST(@Counter AS NVARCHAR);
-    SET @Counter = @Counter + 1;
+    PRINT 'Processing Employee ' + CAST(@Counter AS NVARCHAR); -- Print processing message
+    SET @Counter = @Counter + 1; -- Increment counter
 END;
 
---  CTE (Common Table Expression): Employees with Salary > 60000
+-- CTE (Common Table Expression): Employees with Salary > 60000
 WITH HighEarners AS (
     SELECT EmployeeID, FirstName, LastName, Salary 
-    FROM Employees WHERE Salary > 60000
+    FROM Employees WHERE Salary > 60000 -- Filter employees with salary greater than 60000
 )
 SELECT * FROM HighEarners;
 
---  Trigger: Log Employee Salary Changes
+-- Trigger: Log Employee Salary Changes
 CREATE TRIGGER trg_SalaryUpdate
 ON Employees
 AFTER UPDATE
@@ -104,16 +111,15 @@ AS
 BEGIN
     IF UPDATE(Salary)
     BEGIN
-        PRINT 'Employee salary updated!';
+        PRINT 'Employee salary updated!'; -- Log message when salary is updated
     END;
 END;
 
---  Execute Stored Procedure: Get Employee by ID
+-- Execute Stored Procedure: Get Employee by ID
 EXEC GetEmployeeByID @EmpID = 1;
 
---  Execute Function: Get Employee Full Name
+-- Execute Function: Get Employee Full Name
 SELECT dbo.GetFullName('John', 'Doe') AS FullName;
 
---  Execute Salary Update with Error Handling
+-- Execute Salary Update with Error Handling
 EXEC UpdateEmployeeSalary @EmpID = 1, @NewSalary = 70000;
-
