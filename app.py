@@ -1,3 +1,7 @@
+# This Python script is a Streamlit application designed to perform data profiling on two uploaded datasets.
+# It provides functionalities such as record and column counts, column profiling, pattern analysis, duplicate detection,
+# and cross-source matching. The application helps users gain insights into their datasets and identify potential data quality issues.
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -72,9 +76,11 @@ if df1 is not None or df2 is not None:
     # st.write(f"**Column Count:** {df.shape[1]}")
 
     def pattern_percentage(series, pattern):
+        """Calculate the percentage of values in a series that match a given regex pattern."""
         return series.astype(str).str.fullmatch(pattern).mean() * 100
 
     def text_length(series):
+        """Calculate the minimum, maximum, and average length of text in a series."""
         lengths = series.astype(str).str.len()
         return lengths.min(), lengths.max(), lengths.mean()
 
@@ -83,6 +89,7 @@ if df1 is not None or df2 is not None:
     df = df1.copy() if dataset_choice == "Dataset 1" else df2.copy()
 
     def column_profiling(df):
+        """Generate profiling data for each column in the DataFrame."""
         profiling_data = []
         for column in df.columns:
             data_type = df[column].dtype
@@ -398,6 +405,7 @@ if df1 is not None or df2 is not None:
     st.header("11. Survivorship Rules (Suggestions)")
 
     def calculate_survivorship_df(df, status_column="status", active_value="active"):
+        """Calculate the survivorship rate based on a status column and active value."""
         if status_column not in df.columns:
             return 0.0  # If column doesn't exist
         total_records = len(df)
@@ -443,6 +451,7 @@ if df1 is not None or df2 is not None:
 
         # Function to calculate survivorship rate
         def calculate_survivorship(df, status_col, active_value):
+            """Calculate the percentage of surviving records based on a status column and active value."""
             total_records = len(df)
             surviving_records = df[status_col].eq(active_value).sum()
             if total_records == 0:
@@ -588,6 +597,7 @@ if df1 is not None or df2 is not None:
         st.subheader("Results")
 
         def compute_similarity(row1, row2, cols, weights):
+            """Compute similarity score between two rows based on selected columns and weights."""
             score = 0
             total_weight = 0
             for col in cols:
