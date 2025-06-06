@@ -12,13 +12,13 @@ program x
   ! Read the matrix of coefficients
   do i = 1, n
     do j = 1, n
-      read(*,*) a(i,j)
+      read(*,*) a(i,j)  ! Input each element of the matrix
     end do
   end do
 
   ! Read the vector of constants and initialize the solution vector
   do i = 1, n
-    read(*,*) b(i)
+    read(*,*) b(i)  ! Input each element of the constants vector
     x(i) = 0.0  ! Initialize the solution vector to zero
   end do
 
@@ -26,7 +26,7 @@ program x
   do 1 i = 1, 100
     ! Copy the constants vector to a temporary vector
     do j = 1, n
-      y(j) = b(j)
+      y(j) = b(j)  ! Initialize temporary vector with constants
     end do
 
     ! Update the temporary vector based on the current solution estimate
