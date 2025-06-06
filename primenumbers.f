@@ -12,13 +12,13 @@
       ! Read the matrix coefficients from input
       do i=1,n
         do j=1,n
-          read(*,*)a(i,j)
+          read(*,*)a(i,j)  ! Read each element of the matrix a from input
         end do
       end do
 
       ! Read the vector coefficients from input and initialize the solution vector to zero
       do i=1,n
-        read(*,*)b(i)
+        read(*,*)b(i)  ! Read each element of the vector b from input
         x(i)=0.0  ! Initialize each element of the solution vector x to zero
       end do
 
