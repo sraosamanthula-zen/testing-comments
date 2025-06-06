@@ -40,15 +40,15 @@ with dt_2:
 df1 = df2 = None
 if file1:
     if file1.name.endswith(".csv"):
-        df1 = pd.read_csv(file1)
+        df1 = pd.read_csv(file1)  # Load CSV file into a DataFrame
     else:
-        df1 = pd.read_excel(file1)
+        df1 = pd.read_excel(file1)  # Load Excel file into a DataFrame
 
 if file2:
     if file2.name.endswith(".csv"):
-        df2 = pd.read_csv(file2)
+        df2 = pd.read_csv(file2)  # Load CSV file into a DataFrame
     else:
-        df2 = pd.read_excel(file2)
+        df2 = pd.read_excel(file2)  # Load Excel file into a DataFrame
 
 # Step 3: If both are uploaded, let user choose between them
 if df1 is not None or df2 is not None:
@@ -68,7 +68,7 @@ if df1 is not None or df2 is not None:
     st.header("1.Record & Column Counts")
     df = df1.copy() if dataset_choice == "Dataset 1" else df2.copy()
     st.subheader("**Sample rows of the data:**")
-    st.write(df.dropna().head())
+    st.write(df.dropna().head())  # Display first few rows of the DataFrame
     r_count, c_count = st.columns(2)
     with r_count:
         st.metric("Record Count", f"{df.shape[0]}")

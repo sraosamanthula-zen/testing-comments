@@ -1,4 +1,4 @@
-      ! This Fortran program solves a system of linear equations using an iterative method.
+! This Fortran program solves a system of linear equations using an iterative method.
       ! The program reads a matrix and a vector from input, then iteratively refines the solution vector.
       ! It fulfills the requirement of computing the solution to linear equations, which can be used in various scientific and engineering applications.
 
@@ -6,7 +6,7 @@
       real a(10,10),b(10),x(10),y(10),t
       integer i,j,n
 
-      ! Read the size of the matrix and vector
+      ! Read the size of the matrix and vector from standard input
       read(*,*)n
 
       ! Read the matrix coefficients from input
