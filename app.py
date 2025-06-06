@@ -1,7 +1,8 @@
-# This Python script is designed to be a data profiling application using Streamlit.
-# It allows users to upload and analyze two datasets, providing insights into data quality,
-# pattern analysis, duplicate detection, and cross-source matching, fulfilling the business
-# requirement of data validation and cleansing.
+# This Python script is a Streamlit application designed for data profiling and analysis.
+# It allows users to upload two datasets, perform various data profiling tasks such as 
+# column profiling, pattern analysis, duplicate detection, and cross-source matching. 
+# The application provides visualizations and metrics to help users understand the 
+# structure and quality of their data.
 
 import streamlit as st
 import pandas as pd
@@ -77,11 +78,22 @@ if df1 is not None or df2 is not None:
     # st.write(f"**Column Count:** {df.shape[1]}")
 
     def pattern_percentage(series, pattern):
-        """Calculate the percentage of values in a series that match a given pattern."""
+        """
+        Calculate the percentage of values in a pandas Series that match a given regex pattern.
+
+        :param series: pandas Series containing the data to be analyzed.
+        :param pattern: Regular expression pattern to match.
+        :return: Percentage of values matching the pattern.
+        """
         return series.astype(str).str.fullmatch(pattern).mean() * 100
 
     def text_length(series):
-        """Calculate the minimum, maximum, and average length of text in a series."""
+        """
+        Calculate the minimum, maximum, and average length of text in a pandas Series.
+
+        :param series: pandas Series containing the text data.
+        :return: Tuple containing minimum, maximum, and average text length.
+        """
         lengths = series.astype(str).str.len()
         return lengths.min(), lengths.max(), lengths.mean()
 
@@ -91,13 +103,11 @@ if df1 is not None or df2 is not None:
 
     def column_profiling(df):
         """
-        Generate profiling data for each column in the DataFrame.
-        
-        Parameters:
-        df (DataFrame): The input DataFrame to profile.
+        Perform column profiling on a DataFrame to gather statistics such as data type,
+        unique values, null counts, and text lengths.
 
-        Returns:
-        DataFrame: A DataFrame containing profiling data for each column.
+        :param df: pandas DataFrame to be profiled.
+        :return: DataFrame containing profiling data for each column.
         """
         profiling_data = []
         for column in df.columns:
@@ -415,15 +425,12 @@ if df1 is not None or df2 is not None:
 
     def calculate_survivorship_df(df, status_column="status", active_value="active"):
         """
-        Calculate the survivorship rate based on a status column and active value.
-        
-        Parameters:
-        df (DataFrame): The input DataFrame.
-        status_column (str): The column name indicating status.
-        active_value (str): The value indicating an active record.
+        Calculate the survivorship rate based on a status column and an active value.
 
-        Returns:
-        float: The survivorship rate as a percentage.
+        :param df: pandas DataFrame to be analyzed.
+        :param status_column: Column name indicating the status of records.
+        :param active_value: Value in the status column that signifies an active record.
+        :return: Percentage of surviving records.
         """
         if status_column not in df.columns:
             return 0.0  # If column doesn't exist
@@ -471,15 +478,12 @@ if df1 is not None or df2 is not None:
         # Function to calculate survivorship rate
         def calculate_survivorship(df, status_col, active_value):
             """
-            Calculate the survivorship rate based on a status column and active value.
-            
-            Parameters:
-            df (DataFrame): The input DataFrame.
-            status_col (str): The column name indicating status.
-            active_value (str): The value indicating an active record.
+            Calculate the survivorship rate based on a status column and an active value.
 
-            Returns:
-            float: The survivorship rate as a percentage.
+            :param df: pandas DataFrame to be analyzed.
+            :param status_col: Column name indicating the status of records.
+            :param active_value: Value in the status column that signifies an active record.
+            :return: Percentage of surviving records.
             """
             total_records = len(df)
             surviving_records = df[status_col].eq(active_value).sum()
@@ -628,15 +632,12 @@ if df1 is not None or df2 is not None:
         def compute_similarity(row1, row2, cols, weights):
             """
             Compute similarity score between two rows based on selected columns and weights.
-            
-            Parameters:
-            row1 (Series): The first row.
-            row2 (Series): The second row.
-            cols (list): List of columns to compare.
-            weights (dict): Weights for each column.
 
-            Returns:
-            float: The similarity score.
+            :param row1: First row (Series) to compare.
+            :param row2: Second row (Series) to compare.
+            :param cols: List of columns to use for comparison.
+            :param weights: Dictionary of weights for each column.
+            :return: Similarity score as a float.
             """
             score = 0
             total_weight = 0

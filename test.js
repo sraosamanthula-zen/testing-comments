@@ -10,6 +10,8 @@ const Papa = require('papaparse'); // Import the papaparse library for parsing C
 /**
  * Processes a CSV file, extracts its data, and performs basic analysis.
  * @param {string} filePath - The path to the CSV file to be processed.
+ * This function reads the CSV file, parses its contents, and calculates the average of a numeric column.
+ * It logs the total number of rows, column names, and the average of the specified numeric column.
  */
 function processCSV(filePath) {
     // Read the CSV file synchronously as a UTF-8 encoded string

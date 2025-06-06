@@ -27,24 +27,42 @@ BEGIN
   lv_from        := p_from; -- Assign sender's phone number
   lv_sms_body    := p_sms_body; -- Assign SMS message body
   lv_recipients  := apex_util.string_to_table(p_to, ':'); -- Split recipients into an array using colon as delimiter
+
+  -- Iterate over each recipient and send the SMS
   FOR i IN 1 .. lv_recipients.count LOOP
     -- Construct POST parameters for the current recipient
     lv_post_params := 'From=' || lv_from || '&To=' || lv_to || '&Body=' ||
                       lv_sms_body;
     lv_post_params := utl_url.escape(lv_post_params); -- Escape POST parameters for URL encoding
     v_url          := utl_url.escape(v_url); -- Escape the URL for safe HTTP request
+
+    -- Set the wallet path and password for secure HTTP communication
     utl_http.set_wallet('file:' || '/vhosts/schema/api_twilio',
-                        'password12'); -- Set the wallet for secure HTTP communication
-    t_http_req := utl_http.begin_request(v_url, 'POST', 'HTTP/1.1'); -- Begin the HTTP POST request
-    utl_http.set_authentication(t_http_req, p_user, p_pass); -- Set basic authentication using Twilio credentials
+                        'password12'); 
+
+    -- Begin the HTTP POST request
+    t_http_req := utl_http.begin_request(v_url, 'POST', 'HTTP/1.1'); 
+
+    -- Set basic authentication using Twilio credentials
+    utl_http.set_authentication(t_http_req, p_user, p_pass); 
+
+    -- Set content type for form data
     utl_http.set_header(t_http_req,
                         'Content-Type',
-                        'application/x-www-form-urlencoded'); -- Set content type for form data
+                        'application/x-www-form-urlencoded'); 
+
+    -- Set content length for the POST data
     utl_http.set_header(t_http_req,
                         'Content-Length',
-                        length(lv_post_params)); -- Set content length for the POST data
-    utl_http.write_text(t_http_req, lv_post_params); -- Write the POST parameters to the request
-    t_http_resp := utl_http.get_response(t_http_req); -- Get the HTTP response
+                        length(lv_post_params)); 
+
+    -- Write the POST parameters to the request
+    utl_http.write_text(t_http_req, lv_post_params); 
+
+    -- Get the HTTP response
+    t_http_resp := utl_http.get_response(t_http_req); 
+
+    -- Read the HTTP response line by line
     LOOP
       BEGIN
         lv_resp_line := NULL; -- Initialize response line
@@ -55,8 +73,14 @@ BEGIN
         utl_http.end_response(t_http_resp); -- End the HTTP response
       END;
     END LOOP;
-    utl_http.end_response(t_http_resp); -- Ensure the HTTP response is properly closed
-    dbms_output.put_line(lv_response_text); -- Output the full response text to the console
-    lv_response_text := NULL; -- Reset the response text for the next iteration
+
+    -- Ensure the HTTP response is properly closed
+    utl_http.end_response(t_http_resp); 
+
+    -- Output the full response text to the console
+    dbms_output.put_line(lv_response_text); 
+
+    -- Reset the response text for the next iteration
+    lv_response_text := NULL; 
   END LOOP;
 END send_sms;

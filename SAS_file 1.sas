@@ -20,6 +20,7 @@ PASSWORD="{SAS002}8041A75C0F4262A15ADF53C2495BA193"; /* Oracle connection for ta
 LIBNAME heroprod ORACLE PATH=OLAPPROD SCHEMA=OLAP USER=SAS_OLAP  
 PASSWORD="{SAS002}8041A75C0F4262A15ADF53C2495BA193"; /* Oracle connection for production OLAP schema */
 
+/* Define custom formats for month, half-year, and quarter */
 proc format;
 value V_MONTH
 1='Jan'
@@ -50,6 +51,7 @@ value V_QRTR
 4='Q4';
 run;
 
+/* Create a table with detailed order information */
 PROC SQL;
 
 CREATE TABLE LND_PD_ORDER_DETAIL AS
@@ -131,6 +133,7 @@ AND ORDER_NUM LIKE '3%' /* Filter for orders starting with '3' */
 
 QUIT;
 
+/* Create a table for distinct child orders */
 PROC SQL;
 
 CREATE TABLE CHILD_ORDERS AS
@@ -140,6 +143,7 @@ WHERE CHILD_ORDER_NBR IS NOT NULL; /* Select distinct child orders that are not 
 
 QUIT;
 
+/* Update order details table with flags for child and parent orders */
 PROC SQL;
 
 CREATE TABLE LND_PD_ORDER_DETAIL AS
@@ -153,6 +157,7 @@ FROM LND_PD_ORDER_DETAIL A;
 
 QUIT;
 
+/* Create a report dataset with labeled attributes */
 DATA comp_lib.RPT_GPC_PD_ORDER_SALE1 (DROP = CHILD_ORDER_NBR);
 ATTRIB ORDER_DATE LABEL = 'Order Date'; /* Label for order date */
 ATTRIB FSCL_YEAR LABEL = 'Fiscal Year'; /* Label for fiscal year */
