@@ -1,5 +1,12 @@
-const fs = require('fs');
-const Papa = require('papaparse');
+/**
+ * This JavaScript file provides functionality to process CSV files using the PapaParse library.
+ * It reads a CSV file, parses its contents, logs the number of rows and column names, 
+ * and calculates the average of a specified numeric column. This can be used for data analysis 
+ * or reporting purposes where quick insights from CSV data are required.
+ */
+
+const fs = require('fs'); // Import the filesystem module to read files
+const Papa = require('papaparse'); // Import PapaParse for parsing CSV files
 
 /**
  * Processes a CSV file and logs information about its contents.
@@ -29,4 +36,4 @@ function processCSV(filePath) {
     console.log(`Average of ${numericCol}:`, avg); // Log the average
 }
 
-// Example: processCSV('data.csv');
+// Example: processCSV('data.csv'); // Uncomment to process a file named 'data.csv' using the function above.

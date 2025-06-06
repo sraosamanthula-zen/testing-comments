@@ -1,3 +1,8 @@
+-- File Overview:
+-- This PL/SQL procedure, `send_sms`, is designed to send SMS messages using the Twilio API. 
+-- It takes in Twilio credentials, a sender phone number, recipient phone numbers, and the message body as parameters.
+-- The procedure loops through the recipients, sending the message to each one individually.
+
 CREATE OR REPLACE PROCEDURE send_sms(
   p_user     IN VARCHAR2, -- Twilio user name
   p_pass     IN VARCHAR2, -- Twilio password
@@ -20,9 +25,9 @@ CREATE OR REPLACE PROCEDURE send_sms(
 
   lv_recipients apex_application_global.vc_arr2; -- Array of recipient phone numbers
 BEGIN
-  c_xml_response := NULL;
-  lv_from        := p_from;
-  lv_sms_body    := p_sms_body;
+  c_xml_response := NULL;  -- Initialize XML response
+  lv_from        := p_from;  -- Set sender phone number
+  lv_sms_body    := p_sms_body;  -- Set SMS message body
   lv_recipients  := apex_util.string_to_table(p_to, ':'); -- Split recipients by colon
 
   -- Loop through each recipient and send an SMS
@@ -31,23 +36,23 @@ BEGIN
 
     -- Prepare POST parameters
     lv_post_params := 'From=' || lv_from || '&To=' || lv_to || '&Body=' ||
-                      lv_sms_body;
+                      lv_sms_body;  -- Construct POST parameters
     lv_post_params := utl_url.escape(lv_post_params); -- Escape URL parameters
     v_url          := utl_url.escape(v_url);          -- Escape URL
 
     -- Set up HTTP request
-    utl_http.set_wallet('file:' || '/vhosts/schema/api_twilio', 'password12');
-    t_http_req := utl_http.begin_request(v_url, 'POST', 'HTTP/1.1');
+    utl_http.set_wallet('file:' || '/vhosts/schema/api_twilio', 'password12');  -- Set wallet for secure connection
+    t_http_req := utl_http.begin_request(v_url, 'POST', 'HTTP/1.1');  -- Begin HTTP request
     utl_http.set_authentication(t_http_req, p_user, p_pass); -- Set authentication
-    utl_http.set_header(t_http_req, 'Content-Type', 'application/x-www-form-urlencoded');
-    utl_http.set_header(t_http_req, 'Content-Length', length(lv_post_params));
+    utl_http.set_header(t_http_req, 'Content-Type', 'application/x-www-form-urlencoded');  -- Set content type header
+    utl_http.set_header(t_http_req, 'Content-Length', length(lv_post_params));  -- Set content length header
     utl_http.write_text(t_http_req, lv_post_params); -- Write POST data
 
     -- Get HTTP response
-    t_http_resp := utl_http.get_response(t_http_req);
+    t_http_resp := utl_http.get_response(t_http_req);  -- Get response from HTTP request
     LOOP
       BEGIN
-        lv_resp_line := NULL;
+        lv_resp_line := NULL;  -- Initialize response line
         utl_http.read_line(t_http_resp, lv_resp_line, TRUE); -- Read response line
         lv_response_text := lv_response_text || lv_resp_line; -- Append to response text
       EXCEPTION 

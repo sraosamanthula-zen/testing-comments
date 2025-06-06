@@ -1,10 +1,15 @@
+# File Overview:
+# This Python script generates random data for various fields such as email, phone number, date, name, age, score, and boolean values.
+# It creates unique IDs and constructs Pandas DataFrames from the generated data, which are then saved to CSV files.
+# The script is useful for creating mock datasets for testing or development purposes.
+
 import pandas as pd
 import numpy as np
 import random
 import string
 import uuid
 
-range_value = 1000
+range_value = 1000  # Number of entries to generate for the dataset
 
 def generate_random_email(null_percent: float = 20):
     """

@@ -1,3 +1,9 @@
+# File Overview:
+# This Python script is designed to be used with Streamlit for data profiling and analysis. 
+# It allows users to upload two datasets, perform various data profiling tasks, visualize the results, 
+# and suggest match and merge rules based on column characteristics. The script addresses business 
+# requirements for data quality assessment and duplicate detection.
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -65,10 +71,29 @@ if df1 is not None or df2 is not None:
 
     # Function to calculate the percentage of a pattern match in a series
     def pattern_percentage(series, pattern):
+        """
+        Calculate the percentage of values in a series that match a given pattern.
+
+        Args:
+            series (Series): The data series to analyze.
+            pattern (str): The regex pattern to match.
+
+        Returns:
+            float: The percentage of values matching the pattern.
+        """
         return series.astype(str).str.fullmatch(pattern).mean() * 100
 
     # Function to calculate text length statistics
     def text_length(series):
+        """
+        Calculate minimum, maximum, and average text length in a series.
+
+        Args:
+            series (Series): The data series to analyze.
+
+        Returns:
+            tuple: Minimum, maximum, and average text length.
+        """
         lengths = series.astype(str).str.len()
         return lengths.min(), lengths.max(), lengths.mean()
 
@@ -417,6 +442,17 @@ if df1 is not None or df2 is not None:
 
         # Function to calculate survivorship rate
         def calculate_survivorship(df, status_col, active_value):
+            """
+            Calculate the survivorship rate based on a status column and active value.
+
+            Args:
+                df (DataFrame): The DataFrame to analyze.
+                status_col (str): The column representing status.
+                active_value (str): The value representing active status.
+
+            Returns:
+                float: The percentage of surviving records.
+            """
             total_records = len(df)
             surviving_records = df[status_col].eq(active_value).sum()
             if total_records == 0:

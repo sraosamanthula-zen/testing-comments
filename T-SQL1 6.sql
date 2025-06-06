@@ -1,3 +1,7 @@
+-- File Overview:
+-- This SQL script manages an employee database, including table creation, data insertion, utility functions, stored procedures, and triggers.
+-- It addresses business requirements such as employee data management, salary updates, and reporting.
+
 -- Drop existing table if it exists
 IF OBJECT_ID('dbo.Employees', 'U') IS NOT NULL
     DROP TABLE dbo.Employees;
