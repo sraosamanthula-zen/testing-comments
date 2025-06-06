@@ -50,3 +50,6 @@ program x
   end do
 
 end
+
+! Note: The program assumes that the input matrix is diagonally dominant for convergence.
+! TODO: Consider adding a convergence check to terminate the iterations early if the solution stabilizes.
