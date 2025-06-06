@@ -12,7 +12,7 @@ CREATE OR REPLACE PROCEDURE send_sms(p_user     IN VARCHAR2, -- Twilio user name
   lv_resp_line     VARCHAR2(32767); -- Line of response text
   lv_response_text CLOB;           -- Full response text
 
-  -- Construct the URL for the Twilio API endpoint
+  -- Construct the URL for the Twilio API endpoint using the provided user credentials
   v_url          VARCHAR2(200) := 'https://api.twilio.com/2010-04-01/Accounts/' ||
                                   p_user || '/SMS/Messages.xml';
   lv_post_params VARCHAR2(30000); -- Parameters for POST request
@@ -23,9 +23,9 @@ CREATE OR REPLACE PROCEDURE send_sms(p_user     IN VARCHAR2, -- Twilio user name
 
   lv_recipients apex_application_global.vc_arr2; -- Array to hold multiple recipients
 BEGIN
-  c_xml_response := NULL;
-  lv_from        := p_from;
-  lv_sms_body    := p_sms_body;
+  c_xml_response := NULL; -- Initialize XML response placeholder
+  lv_from        := p_from; -- Set sender phone number
+  lv_sms_body    := p_sms_body; -- Set SMS message body
   -- Convert colon-delimited recipient string into an array
   lv_recipients  := apex_util.string_to_table(p_to, ':');
   FOR i IN 1 .. lv_recipients.count LOOP
@@ -54,7 +54,7 @@ BEGIN
     t_http_resp := utl_http.get_response(t_http_req);
     LOOP
       BEGIN
-        lv_resp_line := NULL;
+        lv_resp_line := NULL; -- Initialize response line variable
         -- Read each line of the response
         utl_http.read_line(t_http_resp, lv_resp_line, TRUE);
         lv_response_text := lv_response_text || lv_resp_line; -- Accumulate response text
