@@ -46,7 +46,7 @@ program x
 
   ! Output the solution vector
   do i = 1, n
-    write(*,*) x(i)
+    write(*,*) x(i)  ! Print each element of the solution vector
   end do
 
 end
